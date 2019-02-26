@@ -9,7 +9,7 @@ import time
 
 zotero_route = os.path.expanduser("~/Dropbox/[DailyArticle]/[Zotero]/storage/")
 target_route = os.path.expanduser("~/Dropbox/[DailyArticle]/[ReadingList]/")
-goodnote_route = os.path.expanduser("~/Dropbox/[GoodNotes]/[Articles]/[ReadingList]/")
+goodnote_route = os.path.expanduser("~/Dropbox/[GoodNotes]/[ReadingList]/")
 
 # Main programs
 def FileManager(goodnote=False):
@@ -81,7 +81,7 @@ class ParseZotero(object):
         if (input_date == "today") or (type(input_date) == tuple) or (int(input_date) in range(1,13)):
             self.input_date = transform_date(input_date)
         else:
-            raise NotImplementedError("Input date shoule be tuple or month information")
+            raise NotImplementedError("Input date shoule be tuple or month(int type)")
 
         self.file_routes = {}
         self.oldfile_routes = {}
@@ -96,17 +96,20 @@ class ParseZotero(object):
                 for filename in os.listdir(dir_route):
                     file_route = dir_route + filename
                     if pdf_checker(file_route):
-                        gathered_date = date_gather(file_route) # gather created date
-                        if type(gathered_date) == tuple: # date is gathered well
-                            if gathered_date < self.input_date: 
-                                if goodnote:
-                                    self.gathering(gathered_date, self.oldfile_routes, file_route) # for goodnotes
-                                else: 
-                                    continue
-                            else: 
-                                self.gathering(gathered_date, self.file_routes, file_route) # for zotero
+                        if pdf_exists(filename, self.target_route):
+                            continue
                         else:
-                            self.error_route.append(gathered_date) # collect error routes
+                            gathered_date = date_gather(file_route) # gather created date
+                            if type(gathered_date) == tuple: # date is gathered well
+                                if gathered_date < self.input_date: 
+                                    if goodnote:
+                                        self.gathering(gathered_date, self.oldfile_routes, file_route) # for goodnotes
+                                    else: 
+                                        continue
+                                else: 
+                                    self.gathering(gathered_date, self.file_routes, file_route) # for zotero
+                            else:
+                                self.error_route.append(gathered_date) # collect error routes
                     else:
                         continue
             except NotADirectoryError:
@@ -154,6 +157,21 @@ class ParseZotero(object):
 
 # ===== Auxiliary Codes ====== #
 # Check a given file is PDF
+def pdf_exists(pdffile, route):
+    exists = False
+    for directory in os.listdir(route):
+        p_route = route + directory
+        if os.path.isdir(p_route):
+            for pdfs in os.listdir(p_route):
+                if pdffile == pdfs:
+                    exists = True
+                    break
+                else:
+                    continue
+        else:
+            continue             
+    return exists   
+
 def pdf_checker(file_route):
     try:
         check_file = os.path.isfile(file_route)
